@@ -9,18 +9,23 @@ The controller uses USART1 at 115200 baud, 8 data bits, no parity, and 1 stop bi
 | `BEEP` | Sound the onboard buzzer | `STATUS BEEP`, `OK` |
 | `RELAY_ON` | Energize relay when Hall input is inactive | `STATUS RELAY ON`, `OK` |
 | `RELAY_OFF` | Release relay and cancel play state | `STATUS RELAY OFF`, `OK` |
+| `AUTO_RELEASE_ON` | Persist automatic Hall-trip relay release | `STATUS AUTO RELEASE ON`, `OK` |
+| `AUTO_RELEASE_OFF` | Persist command-controlled relay release | `STATUS AUTO RELEASE OFF`, `OK` |
 | `LCD <text>` | Replace the 32-character LCD screen | `STATUS LCD UPDATED`, `OK` |
 | `PLAY [song]` | Energize relay and wait for Hall completion | `STATUS RELAY ON`, `STARTED`, then `COMPLETE` |
-| `STATUS` | Report relay and Hall states | Two `STATUS ...` lines, then `OK` |
+| `STATUS` | Report relay, Hall, and auto-release states | Three `STATUS ...` lines, then `OK` |
 
 Commands longer than 39 characters return `ERROR COMMAND TOO LONG`. Unknown commands return `ERROR UNKNOWN COMMAND`. `RELAY_ON` and `PLAY` return `ERROR MAGNET ACTIVE` if the Hall input is already active.
 
 The optional `song` argument is accepted for orchestration but is not interpreted by the current AVR firmware.
 
+The auto-release setting is stored in MT128 EEPROM and survives power cycles. Erased or unrecognized EEPROM defaults to `AUTO_RELEASE_ON`. With auto release OFF, a Hall trip does not change the relay; the external controller must send `RELAY_OFF`. Reflashing may erase EEPROM depending on the ATmega128 fuse configuration, in which case the safe default applies again.
+
 ## Asynchronous messages
 
 - `STATUS READY` after controller startup
-- `STATUS MAGNET ON` and `STATUS MAGNET OFF` when the held Hall state changes
+- `STATUS HALL TRIP` when the held Hall state becomes active
+- `STATUS HALL CLEAR` when the held Hall state clears
 - `STATUS RELAY ON` and `STATUS RELAY OFF` when relay state changes
 - `COMPLETE` when Hall activation ends an active `PLAY` operation
 

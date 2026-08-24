@@ -9,12 +9,14 @@
  *   MT128 TTL left contact, +5V, remains disconnected from the Pi
  *
  * UART: 115200 8N1, newline-terminated ASCII commands.
- * Commands: BEEP, RELAY_ON, RELAY_OFF, LCD <text>, PLAY, STATUS.
+ * Commands: BEEP, RELAY_ON, RELAY_OFF, AUTO_RELEASE_ON,
+ *           AUTO_RELEASE_OFF, LCD <text>, PLAY, STATUS.
  */
 
 #define F_CPU 16000000UL
 
 #include <avr/io.h>
+#include <avr/eeprom.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include <string.h>
@@ -34,6 +36,12 @@
 #define BUZZER_2 PE5
 #define HALL_HOLD_TICKS 2000
 #define COMMAND_LENGTH 40
+#define AUTO_RELEASE_MAGIC 0xC7
+#define AUTO_RELEASE_ENABLED 0xA5
+#define AUTO_RELEASE_DISABLED 0x5A
+
+static uint8_t EEMEM eeprom_auto_release_magic;
+static uint8_t EEMEM eeprom_auto_release;
 
 static void delay_ms(uint16_t milliseconds) {
     while (milliseconds-- != 0) _delay_ms(1);
@@ -161,7 +169,27 @@ static void relay_set(uint8_t enabled) {
     else PORTA &= (uint8_t)~_BV(RELAY_PIN);
 }
 
-static void process_command(const char *command, uint8_t magnet_detected, uint8_t *playing) {
+static uint8_t load_auto_release(void) {
+    if (eeprom_read_byte(&eeprom_auto_release_magic) != AUTO_RELEASE_MAGIC) {
+        return 1;
+    }
+    return eeprom_read_byte(&eeprom_auto_release) != AUTO_RELEASE_DISABLED;
+}
+
+static void save_auto_release(uint8_t enabled) {
+    eeprom_update_byte(
+        &eeprom_auto_release,
+        enabled != 0 ? AUTO_RELEASE_ENABLED : AUTO_RELEASE_DISABLED
+    );
+    eeprom_update_byte(&eeprom_auto_release_magic, AUTO_RELEASE_MAGIC);
+}
+
+static void process_command(
+    const char *command,
+    uint8_t magnet_detected,
+    uint8_t *playing,
+    uint8_t *auto_release
+) {
     if (strcmp(command, "BEEP") == 0) {
         beep();
         uart_line("STATUS BEEP");
@@ -178,6 +206,16 @@ static void process_command(const char *command, uint8_t magnet_detected, uint8_
         relay_set(0);
         *playing = 0;
         uart_line("STATUS RELAY OFF");
+        uart_line("OK");
+    } else if (strcmp(command, "AUTO_RELEASE_ON") == 0) {
+        *auto_release = 1;
+        save_auto_release(*auto_release);
+        uart_line("STATUS AUTO RELEASE ON");
+        uart_line("OK");
+    } else if (strcmp(command, "AUTO_RELEASE_OFF") == 0) {
+        *auto_release = 0;
+        save_auto_release(*auto_release);
+        uart_line("STATUS AUTO RELEASE OFF");
         uart_line("OK");
     } else if (strncmp(command, "LCD", 3) == 0 &&
                (command[3] == '\0' || command[3] == ' ')) {
@@ -196,7 +234,8 @@ static void process_command(const char *command, uint8_t magnet_detected, uint8_
         }
     } else if (strcmp(command, "STATUS") == 0) {
         uart_line(relay_is_on() != 0 ? "STATUS RELAY ON" : "STATUS RELAY OFF");
-        uart_line(magnet_detected != 0 ? "STATUS MAGNET ON" : "STATUS MAGNET OFF");
+        uart_line(magnet_detected != 0 ? "STATUS HALL TRIP" : "STATUS HALL CLEAR");
+        uart_line(*auto_release != 0 ? "STATUS AUTO RELEASE ON" : "STATUS AUTO RELEASE OFF");
         uart_line("OK");
     } else {
         uart_line("ERROR UNKNOWN COMMAND");
@@ -208,6 +247,7 @@ int main(void) {
     uint8_t previous_button_pressed = 0;
     uint8_t previous_relay_state = 0;
     uint8_t playing = 0;
+    uint8_t auto_release = load_auto_release();
     uint8_t command_length = 0;
     uint16_t hall_hold_ticks = 0;
     char command[COMMAND_LENGTH];
@@ -231,7 +271,7 @@ int main(void) {
         uint8_t button_pressed = (PINA & _BV(CENTER_BUTTON)) == 0;
         uint8_t release_pressed = (PINA & _BV(BOTTOM_BUTTON)) == 0;
         if (uart_read_command(command, &command_length) != 0) {
-            process_command(command, magnet_detected, &playing);
+            process_command(command, magnet_detected, &playing, &auto_release);
         }
 
         if (magnet_detected != 0) {
@@ -240,7 +280,7 @@ int main(void) {
             --hall_hold_ticks;
         }
 
-        if (magnet_detected != 0 || release_pressed != 0) {
+        if ((magnet_detected != 0 && auto_release != 0) || release_pressed != 0) {
             relay_set(0);
         }
 
@@ -254,7 +294,7 @@ int main(void) {
         if (hall_state != displayed_hall_state) {
             display_hall_state(hall_state);
             if (displayed_hall_state != 0xFF) {
-                uart_line(hall_state != 0 ? "STATUS MAGNET ON" : "STATUS MAGNET OFF");
+                uart_line(hall_state != 0 ? "STATUS HALL TRIP" : "STATUS HALL CLEAR");
             }
             if (hall_state != 0 && displayed_hall_state != 0xFF) {
                 beep();

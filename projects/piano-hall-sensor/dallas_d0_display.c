@@ -29,16 +29,23 @@
 #define LCD_LINE_2 0xC0
 
 #define HALL_D0_PIN PD5
-#define CENTER_BUTTON PA2
-#define BOTTOM_BUTTON PA4
+#define LEFT_BUTTON PA1
+#define MIDDLE_BUTTON PA2
+#define RIGHT_BUTTON PA3
+#define DOWN_BUTTON PA4
+#define BUTTON_MASK (_BV(LEFT_BUTTON) | _BV(MIDDLE_BUTTON) | _BV(RIGHT_BUTTON) | _BV(DOWN_BUTTON))
 #define RELAY_PIN PA6
 #define BUZZER_1 PE4
 #define BUZZER_2 PE5
 #define HALL_HOLD_TICKS 2000
+#define BUTTON_DEBOUNCE_TICKS 200
 #define COMMAND_LENGTH 40
 #define AUTO_RELEASE_MAGIC 0xC7
 #define AUTO_RELEASE_ENABLED 0xA5
 #define AUTO_RELEASE_DISABLED 0x5A
+#define MENU_MAIN 0
+#define MENU_AUTO_RELEASE 1
+#define MENU_PAGE_COUNT 2
 
 static uint8_t EEMEM eeprom_auto_release_magic;
 static uint8_t EEMEM eeprom_auto_release;
@@ -103,6 +110,33 @@ static void display_hall_state(uint8_t magnet_detected) {
         lcd_text("D0:1 MAGNET ON  ");
     } else {
         lcd_text("D0:0 MAGNET OFF ");
+    }
+}
+
+static void display_main_screen(uint8_t magnet_detected) {
+    lcd_command(LCD_CLEAR);
+    lcd_command(LCD_LINE_1);
+    lcd_text("PIANO SENSOR    ");
+    display_hall_state(magnet_detected);
+}
+
+static void display_auto_release(uint8_t auto_release) {
+    lcd_command(LCD_CLEAR);
+    lcd_command(LCD_LINE_1);
+    lcd_text("AUTO RELEASE    ");
+    lcd_command(LCD_LINE_2);
+    lcd_text(auto_release != 0 ? "MIDDLE: ON      " : "MIDDLE: OFF     ");
+}
+
+static void display_menu_page(
+    uint8_t menu_page,
+    uint8_t auto_release,
+    uint8_t magnet_detected
+) {
+    if (menu_page == MENU_AUTO_RELEASE) {
+        display_auto_release(auto_release);
+    } else {
+        display_main_screen(magnet_detected);
     }
 }
 
@@ -244,16 +278,19 @@ static void process_command(
 
 int main(void) {
     uint8_t displayed_hall_state = 0xFF;
-    uint8_t previous_button_pressed = 0;
     uint8_t previous_relay_state = 0;
     uint8_t playing = 0;
     uint8_t auto_release = load_auto_release();
+    uint8_t menu_page = MENU_MAIN;
+    uint8_t stable_buttons;
+    uint8_t candidate_buttons;
     uint8_t command_length = 0;
+    uint16_t button_debounce_ticks = 0;
     uint16_t hall_hold_ticks = 0;
     char command[COMMAND_LENGTH];
 
-    DDRA = (DDRA & (uint8_t)~(_BV(CENTER_BUTTON) | _BV(BOTTOM_BUTTON))) | _BV(RELAY_PIN);
-    PORTA = (PORTA | _BV(CENTER_BUTTON) | _BV(BOTTOM_BUTTON)) & (uint8_t)~_BV(RELAY_PIN);
+    DDRA = (DDRA & (uint8_t)~BUTTON_MASK) | _BV(RELAY_PIN);
+    PORTA = (PORTA | BUTTON_MASK) & (uint8_t)~_BV(RELAY_PIN);
     DDRD &= (uint8_t)~_BV(HALL_D0_PIN);
     PORTD |= _BV(HALL_D0_PIN);
     DDRE |= _BV(BUZZER_1) | _BV(BUZZER_2);
@@ -261,17 +298,20 @@ int main(void) {
     lcd_initialize();
     uart_initialize();
 
-    lcd_command(LCD_LINE_1);
-    lcd_text("PIANO SENSOR    ");
-    display_hall_state(0);
+    stable_buttons = (uint8_t)~PINA & BUTTON_MASK;
+    candidate_buttons = stable_buttons;
+    display_main_screen(0);
     uart_line("STATUS READY");
 
     for (;;) {
         uint8_t magnet_detected = (PIND & _BV(HALL_D0_PIN)) != 0;
-        uint8_t button_pressed = (PINA & _BV(CENTER_BUTTON)) == 0;
-        uint8_t release_pressed = (PINA & _BV(BOTTOM_BUTTON)) == 0;
+        uint8_t buttons = (uint8_t)~PINA & BUTTON_MASK;
+        uint8_t release_pressed = buttons & _BV(DOWN_BUTTON);
         if (uart_read_command(command, &command_length) != 0) {
             process_command(command, magnet_detected, &playing, &auto_release);
+            if (menu_page == MENU_AUTO_RELEASE) {
+                display_auto_release(auto_release);
+            }
         }
 
         if (magnet_detected != 0) {
@@ -284,15 +324,36 @@ int main(void) {
             relay_set(0);
         }
 
-        if (button_pressed != 0 && previous_button_pressed == 0 &&
-            magnet_detected == 0 && release_pressed == 0) {
-            relay_set(1);
-        }
-        previous_button_pressed = button_pressed;
-
         uint8_t hall_state = hall_hold_ticks != 0;
+        if (buttons != candidate_buttons) {
+            candidate_buttons = buttons;
+            button_debounce_ticks = BUTTON_DEBOUNCE_TICKS;
+        } else if (button_debounce_ticks != 0) {
+            --button_debounce_ticks;
+            if (button_debounce_ticks == 0 && stable_buttons != candidate_buttons) {
+                uint8_t pressed_edges = candidate_buttons & (uint8_t)~stable_buttons;
+                stable_buttons = candidate_buttons;
+                if ((pressed_edges & _BV(LEFT_BUTTON)) != 0) {
+                    menu_page = menu_page == MENU_MAIN ? MENU_PAGE_COUNT - 1 : menu_page - 1;
+                    display_menu_page(menu_page, auto_release, hall_state);
+                } else if ((pressed_edges & _BV(RIGHT_BUTTON)) != 0) {
+                    menu_page = (uint8_t)((menu_page + 1) % MENU_PAGE_COUNT);
+                    display_menu_page(menu_page, auto_release, hall_state);
+                } else if ((pressed_edges & _BV(MIDDLE_BUTTON)) != 0 &&
+                           menu_page == MENU_AUTO_RELEASE) {
+                    auto_release = auto_release == 0;
+                    save_auto_release(auto_release);
+                    display_auto_release(auto_release);
+                    uart_line(auto_release != 0 ?
+                              "STATUS AUTO RELEASE ON" : "STATUS AUTO RELEASE OFF");
+                }
+            }
+        }
+
         if (hall_state != displayed_hall_state) {
-            display_hall_state(hall_state);
+            if (menu_page == MENU_MAIN) {
+                display_hall_state(hall_state);
+            }
             if (displayed_hall_state != 0xFF) {
                 uart_line(hall_state != 0 ? "STATUS HALL TRIP" : "STATUS HALL CLEAR");
             }

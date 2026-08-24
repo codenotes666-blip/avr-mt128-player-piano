@@ -21,12 +21,26 @@ The optional `song` argument is accepted for orchestration but is not interprete
 
 The auto-release setting is stored in MT128 EEPROM and survives power cycles. Erased or unrecognized EEPROM defaults to `AUTO_RELEASE_ON`. With auto release OFF, a Hall trip does not change the relay; the external controller must send `RELAY_OFF`. Reflashing may erase EEPROM depending on the ATmega128 fuse configuration, in which case the safe default applies again.
 
+## Local LCD menu
+
+The AVR-MT128 buttons configure the same EEPROM setting without a serial controller:
+
+| Button | MCU input | Menu behavior |
+| --- | --- | --- |
+| Left | `PA1` | Previous page, wrapping through settings and the main screen |
+| Middle | `PA2` | Toggle the Boolean option shown on a settings page |
+| Right | `PA3` | Next page, wrapping through settings and the main screen |
+| Down | `PA4` | Emergency relay release from any page |
+
+The current pages are `MAIN` and `AUTO RELEASE`. On the `AUTO RELEASE` page, middle toggles `ON`/`OFF`, updates EEPROM immediately, redraws the LCD, and emits `STATUS AUTO RELEASE ON` or `STATUS AUTO RELEASE OFF`. The middle button no longer engages the relay. The up button is currently unused.
+
 ## Asynchronous messages
 
 - `STATUS READY` after controller startup
 - `STATUS HALL TRIP` when the held Hall state becomes active
 - `STATUS HALL CLEAR` when the held Hall state clears
 - `STATUS RELAY ON` and `STATUS RELAY OFF` when relay state changes
+- `STATUS AUTO RELEASE ON` or `STATUS AUTO RELEASE OFF` after a local menu change
 - `COMPLETE` when Hall activation ends an active `PLAY` operation
 
 Consumers must tolerate status lines before the terminal response to a command.

@@ -215,13 +215,13 @@
     </section>
 
     <section class="project-section" id="firmware">
-      <div class="section-heading"><div><span class="eyebrow">Firmware integration</span><h2>UART state machine</h2></div><p>Hardware buttons remain available for local testing.</p></div>
+      <div class="section-heading"><div><span class="eyebrow">Firmware integration</span><h2>UART state machine</h2></div><p>The onboard LCD and buttons provide a local EEPROM settings menu.</p></div>
       <div class="safety-band"><strong>Integration status</strong><span>UART is enabled at 115200 8N1. Pi-to-MT128 commands and MT128-to-Pi status have both been verified on the installed hardware.</span></div>
       <div class="state-grid">
-        <article><span>IDLE</span><strong>Relay open</strong><p>Wait for a Pi <code>PLAY</code> command or the center-button manual start.</p></article>
+        <article><span>IDLE</span><strong>Relay open</strong><p>Wait for a <code>PLAY</code> or <code>RELAY_ON</code> UART command while displaying Hall state.</p></article>
         <article><span>PLAYING</span><strong>Relay C-NO closed</strong><p>After <code>PLAY</code>, energize PA6, send <code>STARTED</code>, and monitor Hall D0.</p></article>
         <article><span>COMPLETE</span><strong>Relay open</strong><p>On Hall detection, release PA6 immediately, beep, and send <code>COMPLETE</code> to the Pi.</p></article>
-        <article><span>MANUAL</span><strong>Board controls</strong><p>Center button starts/holds the relay. Bottom button releases it without pretending a Hall event occurred.</p></article>
+        <article><span>MENU</span><strong>Board controls</strong><p>Left/right cycle the main and EEPROM setting pages. Middle toggles the displayed Boolean; down remains an emergency relay release.</p></article>
       </div>
       <div class="protocol-code">
         <div><h3>Pi-side commands</h3><pre><code>pianoctl beep

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KY-024 Linear Magnetic Hall Sensor</title>
+  <link rel="stylesheet" href="/descriptions/ky-024.css">
+</head>
+<body>
+  <header class="sensor-bar">
+    <a href="/">← Workbench</a>
+    <div><strong>KY-024</strong><span>Linear magnetic Hall sensor</span></div>
+    <nav><a href="#pinout">Pinout</a><a href="/docs-html/ky-024-manual/page-001.html">Manual</a><a href="/docs-html/ky-024-datasheet/page-001.html">Datasheet</a></nav>
+  </header>
+  <main>
+    <section class="sensor-intro">
+      <div><span class="eyebrow">Magnetic field module</span><h1>KY-024</h1><p>A linear Hall sensor plus an adjustable threshold comparator. It reports both magnetic-field strength/polarity as an analog voltage and a simple threshold state as a digital signal.</p></div>
+      <img src="/images/ky-024.png" alt="KY-024 linear magnetic Hall sensor module">
+    </section>
+
+    <section class="signal-flow">
+      <div class="flow-block"><span>01</span><strong>49E / AH49E Hall element</strong><p>Converts magnetic flux perpendicular to the sensor face into an analog voltage. With no applied field, output is typically near half the supply voltage.</p></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-block"><span>02</span><strong>A0 analog output</strong><p>Direct Hall-sensor voltage for measuring field changes and distinguishing magnetic pole direction relative to the module orientation.</p></div>
+      <div class="flow-arrow">↘</div>
+      <div class="flow-block"><span>03</span><strong>LM393 comparator</strong><p>Compares the Hall voltage with the threshold set by the blue potentiometer.</p></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-block"><span>04</span><strong>D0 digital output</strong><p>Changes logical state when the comparator threshold is crossed. Use this for simple magnet present/absent or position events.</p></div>
+    </section>
+
+    <section class="pinout-section" id="pinout">
+      <div class="section-heading"><div><span class="eyebrow">Manufacturer orientation</span><h2>Four-pin header</h2></div><p>Sensor element at the top, connector at the bottom. Always confirm the silkscreen on clone modules before applying power.</p></div>
+      <div class="pinout-layout">
+        <img src="/images/ky-024-pinout.svg" alt="KY-024 official pinout diagram">
+        <div class="pin-list">
+          <article><b>A0</b><div><strong>Analog output</strong><p>Continuous Hall voltage. Connect to a microcontroller ADC input.</p></div></article>
+          <article><b>G</b><div><strong>Ground</strong><p>Common 0 V reference shared with the controller.</p></div></article>
+          <article><b>+</b><div><strong>Supply voltage</strong><p>Manufacturer range is 3–5 V. Use 5 V with the RedBoard or AVR-MT128.</p></div></article>
+          <article><b>D0</b><div><strong>Digital threshold output</strong><p>Comparator result based on the potentiometer setting.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="details-grid">
+      <article><span class="eyebrow">Adjustment</span><h2>Blue potentiometer</h2><p>Sets only the LM393 digital threshold. It does not change the Hall element’s analog sensitivity or amplify A0.</p></article>
+      <article><span class="eyebrow">Indicators</span><h2>Two LEDs</h2><p>One LED indicates module power. The other follows the comparator/threshold state.</p></article>
+      <article><span class="eyebrow">Measurement</span><h2>Analog behavior</h2><p>At rest A0 is typically near half the supply. A magnetic pole moves voltage above or below that baseline. Which direction increases depends on pole and sensor-face orientation, so calibrate using your actual magnet.</p></article>
+      <article><span class="eyebrow">Applications</span><h2>What it can detect</h2><p>Magnet proximity, shaft speed, wheel position, door/limit position, polarity changes, and relative magnetic-field variation.</p></article>
+    </section>
+
+    <section class="wiring-section">
+      <div class="section-heading"><div><span class="eyebrow">Connection examples</span><h2>Wiring</h2></div><p>Analog and digital outputs may be used independently or together.</p></div>
+      <div class="wiring-grid">
+        <article><h3>SparkFun RedBoard</h3><table><tr><th>KY-024</th><th>RedBoard</th></tr><tr><td>A0</td><td>A0</td></tr><tr><td>G</td><td>GND</td></tr><tr><td>+</td><td>5V</td></tr><tr><td>D0</td><td>D3</td></tr></table></article>
+        <article><h3>Olimex AVR-MT128</h3><table><tr><th>KY-024</th><th>AVR-MT128</th></tr><tr><td>A0</td><td>ADC header pin 3 · ADC0/PF0</td></tr><tr><td>G</td><td>EXT2 pin 1 · GND</td></tr><tr><td>+</td><td>EXT2 pin 2 · +5V</td></tr><tr><td>D0</td><td>EXT1 pin 12 · PD5/XCK1</td></tr></table></article>
+      </div>
+    </section>
+
+    <section class="code-section">
+      <div><span class="eyebrow">RedBoard example</span><h2>Read both outputs</h2><p>This prints the raw ADC reading, calculated voltage, and threshold state. Record the no-magnet baseline before interpreting field direction.</p></div>
+      <pre><code>const uint8_t hallAnalogPin = A0;
+const uint8_t hallDigitalPin = 3;
+
+void setup() {
+  pinMode(hallDigitalPin, INPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int rawField = analogRead(hallAnalogPin);
+  float voltage = rawField * (5.0f / 1023.0f);
+  bool thresholdReached = digitalRead(hallDigitalPin) == HIGH;
+
+  Serial.print("Hall ADC: ");
+  Serial.print(rawField);
+  Serial.print("  voltage: ");
+  Serial.print(voltage, 3);
+  Serial.print(" V  threshold: ");
+  Serial.println(thresholdReached ? "reached" : "not reached");
+  delay(100);
+}</code></pre>
+    </section>
+
+    <section class="caution"><strong>Variant warning</strong><p>“KY-024” is sold by multiple manufacturers. Component choices, digital polarity, and physical pin order may differ. This page follows the pictured Joy-IT SEN-KY024LM module. Read the labels printed on your specific board before wiring it.</p></section>
+  </main>
+</body>
+</html>

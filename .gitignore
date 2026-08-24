@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# AVR and Arduino build output
+build/
+*.elf
+*.eep
+*.o
+*.d
+*.map
+*.lss
+
+# Hardware backups and generated reconstruction output
+*flash-backup*.hex
+reconstructed/
+
+# Downloaded vendor source archives and IDE metadata
+reference-source/
+*.aps
+*.aws
+
+# Generated document rendering cache
+web-ide/static/docs-html/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs and local configuration
+*.log
+.env
+.env.*
+!.env.example

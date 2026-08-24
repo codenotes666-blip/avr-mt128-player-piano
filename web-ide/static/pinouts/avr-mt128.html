@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Olimex AVR-MT128 Rear Pinout</title>
+  <link rel="stylesheet" href="/pinouts/pinout.css">
+</head>
+<body>
+  <header class="pinout-bar">
+    <a href="/">← Workbench</a>
+    <div><strong>Olimex AVR-MT128</strong><span>Rear connector pinout</span></div>
+    <nav><a href="/descriptions/avr-mt128.html">Description</a><a href="/docs-html/olimex-avr-mt128-manual/page-001.html">Manual</a><a href="/docs-html/olimex-avr-mt128-schematic/page-001.html">Schematic</a></nav>
+  </header>
+
+  <main>
+    <section class="pinout-intro">
+      <div><span class="eyebrow">Component side · opposite LCD</span><h1>Rear connector map</h1></div>
+      <p>Official Olimex board photograph with connector locations. Select a callout to jump to its exact pin table.</p>
+    </section>
+
+    <section class="pin-search" aria-label="Search board pins">
+      <label for="pinSearch"><strong>Find a pin or function</strong><span>Try AD, analog, PWM, serial clock, MOSI, or reset</span></label>
+      <div class="pin-search-control">
+        <input id="pinSearch" type="search" autocomplete="off" placeholder="Search signals, acronyms, and uses…">
+        <button id="clearPinSearch" title="Clear search" aria-label="Clear pin search">×</button>
+      </div>
+      <div class="pin-search-results" id="pinSearchResults" role="listbox"></div>
+    </section>
+
+    <section class="board-map" aria-label="AVR-MT128 per-pin connector map">
+      <div class="wire-workspace" id="wireWorkspace">
+        <div class="photo-wrap" id="photoWrap">
+          <img src="/images/avr-mt128-rear.jpg" alt="Rear component side of Olimex AVR-MT128">
+          <button class="hotspot relay" data-target="relay" aria-label="Relay connector"></button>
+          <button class="hotspot jtag" data-target="jtag" aria-label="JTAG connector"></button>
+          <button class="hotspot power" data-target="power" aria-label="Power connector"></button>
+          <button class="hotspot db9" data-target="db9" aria-label="DB9 RS232 connector"></button>
+          <button class="hotspot rs232" data-target="rs232" aria-label="TTL RS232 connector"></button>
+          <button class="hotspot freq" data-target="freq" aria-label="Frequency connector"></button>
+          <button class="hotspot dallas" data-target="dallas" aria-label="Dallas connector"></button>
+          <button class="hotspot icsp" data-target="icsp" aria-label="ICSP connector"></button>
+          <button class="hotspot adc" data-target="adc" aria-label="ADC connector"></button>
+          <button class="hotspot ext1" data-target="ext1" aria-label="EXT1 connector"></button>
+          <button class="hotspot ext2" data-target="ext2" aria-label="EXT2 connector"></button>
+        </div>
+        <aside class="wire-panel">
+          <div class="wire-heading"><span id="wireKind">Programming</span><h2 id="wireTitle">ICSP · 10 pin</h2><p>Each color terminates on the physical contact described by its row.</p></div>
+          <div class="wire-rows" id="wireRows"></div>
+        </aside>
+        <svg class="wire-layer" id="wireLayer" aria-hidden="true"></svg>
+      </div>
+      <div class="orientation-note"><strong>Orientation</strong><span>Photo shows the component side behind the LCD. Pin numbering follows the official Olimex manual and connector top views.</span></div>
+    </section>
+
+    <section class="connector-index" aria-label="Connector selector">
+      <button class="active" data-target="icsp">ICSP</button><button data-target="jtag">JTAG</button><button data-target="ext1">EXT1</button><button data-target="ext2">EXT2</button><button data-target="adc">ADC</button><button data-target="rs232">RS232</button><button data-target="db9">DB9</button><button data-target="relay">Relay</button><button data-target="freq">Freq</button><button data-target="dallas">Dallas</button><button data-target="power">Power</button>
+    </section>
+
+    <section class="connector-details" aria-hidden="true">
+      <article class="connector-card active" id="icsp">
+        <div class="card-heading"><span>Programming</span><h2>ICSP · 10 pin</h2><p>Use this header with AVR ISP programmers. Do not connect an ISP programmer to JTAG.</p></div>
+        <div class="pin-grid two-column">
+          <div><b>1</b><strong>PDI / MOSI</strong><span>Program data into MCU</span></div><div><b>2</b><strong>+5V</strong><span>Target-voltage sense</span></div>
+          <div><b>3</b><strong>NC</strong><span>Not connected</span></div><div><b>4</b><strong>GND</strong><span>Signal ground</span></div>
+          <div><b>5</b><strong>RST</strong><span>Active-low target reset</span></div><div><b>6</b><strong>GND</strong><span>Signal ground</span></div>
+          <div><b>7</b><strong>SCK</strong><span>Programming clock</span></div><div><b>8</b><strong>GND</strong><span>Signal ground</span></div>
+          <div><b>9</b><strong>PDO / MISO</strong><span>Program data from MCU</span></div><div><b>10</b><strong>GND</strong><span>Signal ground</span></div>
+        </div>
+        <div class="warning"><strong>Verified startup order</strong><span>Power the AVR-ISP500-TINY first, then apply separate power to the AVR-MT128.</span></div>
+      </article>
+
+      <article class="connector-card" id="jtag">
+        <div class="card-heading"><span>Debugging</span><h2>JTAG · 10 pin</h2><p>In-circuit debugging and JTAG programming only.</p></div>
+        <div class="pin-grid two-column">
+          <div><b>1</b><strong>TCK</strong><span>Test clock</span></div><div><b>2</b><strong>GND</strong><span>Ground</span></div>
+          <div><b>3</b><strong>TDO</strong><span>Test data out</span></div><div><b>4</b><strong>+5V</strong><span>Target voltage</span></div>
+          <div><b>5</b><strong>TMS</strong><span>Test mode select</span></div><div><b>6</b><strong>RESET</strong><span>Target reset</span></div>
+          <div><b>7</b><strong>+5V</strong><span>Target voltage</span></div><div><b>8</b><strong>NC</strong><span>Not connected</span></div>
+          <div><b>9</b><strong>TDI</strong><span>Test data in</span></div><div><b>10</b><strong>GND</strong><span>Ground</span></div>
+        </div>
+      </article>
+
+      <article class="connector-card" id="ext1">
+        <div class="card-heading"><span>Expansion</span><h2>EXT1 · 14 pin</h2><p>Port D/E timer, interrupt, clock, and I²C signals.</p></div>
+        <div class="pin-grid compact">
+          <div><b>1</b><strong>GND</strong></div><div><b>2</b><strong>+5V</strong></div><div><b>3</b><strong>XCK0 / AIN0</strong></div><div><b>4</b><strong>OC3A / AIN1</strong></div><div><b>5</b><strong>OC3B / INT4</strong></div><div><b>6</b><strong>OC3C / INT5</strong></div><div><b>7</b><strong>T3 / INT6</strong></div><div><b>8</b><strong>IC3 / INT7</strong></div><div><b>9</b><strong>SCL / INT0</strong></div><div><b>10</b><strong>SDA / INT1</strong></div><div><b>11</b><strong>IC1</strong></div><div><b>12</b><strong>XCK1</strong></div><div><b>13</b><strong>T1</strong></div><div><b>14</b><strong>T2</strong></div>
+        </div>
+      </article>
+
+      <article class="connector-card" id="ext2">
+        <div class="card-heading"><span>Expansion</span><h2>EXT2 · 14 pin</h2><p>Port G, SPI, PWM, and external-memory signals.</p></div>
+        <div class="pin-grid compact">
+          <div><b>1</b><strong>GND</strong></div><div><b>2</b><strong>+5V</strong></div><div><b>3</b><strong>PG0 / WR</strong></div><div><b>4</b><strong>PG1 / RD</strong></div><div><b>5</b><strong>PG2 / ALE</strong></div><div><b>6</b><strong>SS</strong></div><div><b>7</b><strong>MOSI</strong></div><div><b>8</b><strong>MISO</strong></div><div><b>9</b><strong>OC0</strong></div><div><b>10</b><strong>OC1A</strong></div><div><b>11</b><strong>OC1B</strong></div><div><b>12</b><strong>OC2 / OC1C</strong></div><div><b>13</b><strong>PC3 / A11</strong></div><div><b>14</b><strong>PA7 / AD7</strong></div>
+        </div>
+      </article>
+
+      <article class="connector-card" id="adc">
+        <div class="card-heading"><span>Analog</span><h2>ADC · 6 pin</h2><p>Analog reference, ground, and four ADC channels.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>AREF</strong></div><div><b>2</b><strong>GND</strong></div><div><b>3</b><strong>ADC0</strong></div><div><b>4</b><strong>ADC1</strong></div><div><b>5</b><strong>ADC2</strong></div><div><b>6</b><strong>ADC3</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="rs232">
+        <div class="card-heading"><span>Serial</span><h2>RS232 · 4 pin TTL</h2><p>Logic-level serial connector; not RS-232 voltage levels.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>TXD</strong><span>Transmit output</span></div><div><b>2</b><strong>RXD</strong><span>Receive input</span></div><div><b>3</b><strong>GND</strong></div><div><b>4</b><strong>+5V</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="db9">
+        <div class="card-heading"><span>Serial</span><h2>DB9 RS232 · 9 pin</h2><p>Level-shifted RS-232 interface.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>NC</strong></div><div><b>2</b><strong>TXD</strong><span>Transmit output</span></div><div><b>3</b><strong>RXD</strong><span>Receive input</span></div><div><b>4</b><strong>NC</strong></div><div><b>5</b><strong>GND</strong></div><div><b>6</b><strong>NC</strong></div><div><b>7</b><strong>NC</strong></div><div><b>8</b><strong>NC</strong></div><div><b>9</b><strong>NC</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="relay">
+        <div class="card-heading"><span>Output</span><h2>Relay connector · 3 pin</h2><p>Dry contacts from the onboard relay. Follow the PCB silkscreen: normally open, common, normally closed.</p></div>
+        <div class="pin-grid compact"><div><b>NO</b><strong>Normally open</strong></div><div><b>C</b><strong>Common</strong></div><div><b>NC</b><strong>Normally closed</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="freq">
+        <div class="card-heading"><span>Input</span><h2>FREQ · 2 pin</h2><p>External frequency input routed by jumper J to T1 or T2.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>FREQ</strong><span>External frequency signal</span></div><div><b>2</b><strong>GND</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="dallas">
+        <div class="card-heading"><span>Input</span><h2>DALLAS · 2 pin</h2><p>Dallas touch-memory interface.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>DALLAS</strong><span>Dallas data signal</span></div><div><b>2</b><strong>GND</strong></div></div>
+      </article>
+
+      <article class="connector-card" id="power">
+        <div class="card-heading"><span>Supply</span><h2>PWR · barrel / 2 pin</h2><p>Board input passes through the bridge and 78L05 supply circuit.</p></div>
+        <div class="pin-grid compact"><div><b>1</b><strong>PWR</strong><span>9 VAC or approximately +12 VDC</span></div><div><b>2</b><strong>GND</strong><span>DC return</span></div></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/pinouts/pinout.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=/projects/player-piano-controller.html">
+  <link rel="canonical" href="/projects/player-piano-controller.html">
+  <title>Piano Hall Sensor Project</title>
+  <link rel="stylesheet" href="/projects/project.css">
+  <link rel="stylesheet" href="/projects/project-locator.css">
+</head>
+<body>
+  <header class="project-bar">
+    <a href="/">← Workbench</a>
+    <div><strong>Piano Hall Sensor</strong><span>AVR-MT128 + KY-024</span></div>
+    <nav><a href="/descriptions/avr-mt128.html">MT128</a><a href="/descriptions/ky-024.html">KY-024</a><a href="/api/file?path=projects%2Fpiano-hall-sensor%2Fpiano_hall_sensor.c">Source</a></nav>
+  </header>
+  <main>
+    <section class="project-hero">
+      <div><span class="eyebrow">Project 01 · Magnetic instrument</span><h1>Piano Hall Sensor</h1><p>Move a magnet toward or away from the KY-024. The AVR-MT128 measures the analog Hall voltage, quantizes the field change into musical notes, displays the note on its LCD, and plays it on the onboard buzzer.</p><div class="hero-actions"><a href="#wiring">Start wiring</a><a href="#firmware">Firmware</a></div></div>
+      <div class="hero-devices"><figure><img src="/images/avr-mt128-rear.jpg" alt="AVR-MT128"><figcaption>Olimex AVR-MT128</figcaption></figure><span>+</span><figure><img src="/images/ky-024.png" alt="KY-024"><figcaption>KY-024 Hall sensor</figcaption></figure></div>
+    </section>
+
+    <section class="project-summary">
+      <div><strong>Input</strong><span>KY-024 A0 magnetic-field voltage</span></div><div><strong>Processor</strong><span>ATmega128 ADC0, 10-bit conversion</span></div><div><strong>Outputs</strong><span>16×2 LCD and onboard buzzer</span></div><div><strong>Supply</strong><span>Common regulated 5 V rail</span></div>
+    </section>
+
+    <section class="project-section" id="wiring">
+      <div class="section-heading"><div><span class="eyebrow">Electrical design</span><h2>Wiring schematic</h2></div><p>Power removed while wiring. The programmer is not required for sensor operation.</p></div>
+      <div class="schematic-wrap">
+        <svg viewBox="0 0 1100 510" role="img" aria-label="KY-024 to AVR-MT128 wiring schematic">
+          <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#087f75"/></marker></defs>
+          <rect class="module" x="55" y="75" width="250" height="350" rx="5"/><text class="module-title" x="180" y="112">KY-024</text><text class="module-sub" x="180" y="136">49E Hall + LM393</text>
+          <circle class="terminal analog" cx="305" cy="195" r="12"/><text class="pin-label" x="275" y="199">A0</text>
+          <circle class="terminal ground" cx="305" cy="255" r="12"/><text class="pin-label" x="275" y="259">G</text>
+          <circle class="terminal power" cx="305" cy="315" r="12"/><text class="pin-label" x="275" y="319">+</text>
+          <circle class="terminal digital" cx="305" cy="375" r="12"/><text class="pin-label" x="275" y="379">D0</text>
+          <rect class="module" x="795" y="75" width="250" height="350" rx="5"/><text class="module-title" x="920" y="112">AVR-MT128</text><text class="module-sub" x="920" y="136">ATmega128 · 5 V</text>
+          <circle class="terminal analog" cx="795" cy="195" r="12"/><text class="pin-label right" x="825" y="189">ADC pin 3</text><text class="pin-note" x="825" y="207">ADC0 / PF0</text>
+          <circle class="terminal ground" cx="795" cy="255" r="12"/><text class="pin-label right" x="825" y="249">EXT2 pin 1</text><text class="pin-note" x="825" y="267">GND</text>
+          <circle class="terminal power" cx="795" cy="315" r="12"/><text class="pin-label right" x="825" y="309">EXT2 pin 2</text><text class="pin-note" x="825" y="327">+5 V</text>
+          <circle class="terminal digital" cx="795" cy="375" r="12"/><text class="pin-label right" x="825" y="369">EXT1 pin 12</text><text class="pin-note" x="825" y="387">PD5 / optional digital input</text>
+          <line class="wire analog-wire" x1="317" y1="195" x2="445" y2="195"/><polyline class="resistor" points="445,195 458,183 471,207 484,183 497,207 510,183 523,207 536,195"/><line class="wire analog-wire" x1="536" y1="195" x2="783" y2="195" marker-end="url(#arrow)"/><text class="wire-label" x="490" y="168">1 kΩ series</text>
+          <line class="wire ground-wire" x1="317" y1="255" x2="783" y2="255"/><text class="wire-label" x="520" y="243">Common ground</text>
+          <line class="wire power-wire" x1="317" y1="315" x2="783" y2="315"/><text class="wire-label" x="520" y="303">+5 V</text>
+          <line class="wire digital-wire dashed" x1="317" y1="375" x2="783" y2="375"/><text class="wire-label" x="490" y="362">Optional D0 threshold</text>
+          <line class="component-wire" x1="660" y1="195" x2="660" y2="220"/><line class="capacitor" x1="640" y1="220" x2="680" y2="220"/><line class="capacitor" x1="640" y1="231" x2="680" y2="231"/><line class="component-wire" x1="660" y1="231" x2="660" y2="255"/><text class="component-label" x="684" y="229">100 nF optional</text>
+          <rect class="no-divider" x="390" y="430" width="320" height="48" rx="4"/><text x="550" y="450">NO VOLTAGE DIVIDER IN THIS BUILD</text><text class="small" x="550" y="467">KY-024 and ADC both operate from the same 5 V rail</text>
+        </svg>
+      </div>
+      <div class="wiring-table"><table><thead><tr><th>KY-024</th><th>Through</th><th>AVR-MT128</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>A0</strong></td><td>1 kΩ series resistor</td><td>ADC header pin 3 · ADC0/PF0</td><td>Analog magnetic-field measurement</td></tr><tr><td><strong>G</strong></td><td>Direct wire</td><td>EXT2 pin 1 · GND</td><td>Common voltage reference</td></tr><tr><td><strong>+</strong></td><td>Direct wire</td><td>EXT2 pin 2 · +5 V</td><td>Module power</td></tr><tr><td><strong>D0</strong></td><td>Optional direct wire</td><td>EXT1 pin 12 · PD5/XCK1</td><td>Comparator threshold event; firmware does not require it</td></tr></tbody></table></div>
+      <section class="photo-locator">
+        <div class="locator-heading"><span class="eyebrow">Physical connector locations</span><h3>Where are those pins?</h3><p>All photos show the component side of the AVR-MT128; the LCD is on the opposite side. The red silkscreen numbers are the authority for orientation.</p></div>
+        <figure class="overview-photo"><img src="/images/projects/piano-hall-sensor/mt128-connector-overview.webp?v=3" alt="AVR-MT128 overview with ADC, EXT1 and EXT2 connectors boxed"><figcaption>Connector overview: ADC is the 6-pin block; EXT1 and EXT2 are the adjacent 14-pin blocks along the lower edge.</figcaption></figure>
+        <div class="connector-photos">
+          <figure><img src="/images/projects/piano-hall-sensor/adc-pin-3.webp?v=3" alt="ADC header with pin 3 ADC0 PF0 marked"><figcaption><strong>KY-024 A0 → ADC pin 3</strong><span>ADC pin 3 is the upper contact in the middle pair. It is the ATmega128 <code>ADC0/PF0</code> input.</span></figcaption></figure>
+          <figure><img src="/images/projects/piano-hall-sensor/ext2-pins-1-2.webp?v=3" alt="EXT2 header with pin 1 ground and pin 2 5 volts marked"><figcaption><strong>KY-024 G and + → EXT2 pins 1 and 2</strong><span>The visible <code>1/2</code> silkscreen is beside the rightmost pair: pin 1 is upper GND; pin 2 is lower +5 V.</span></figcaption></figure>
+          <figure><img src="/images/projects/piano-hall-sensor/ext1-pin-12.webp?v=3" alt="EXT1 header with optional pin 12 PD5 marked"><figcaption><strong>KY-024 D0 → EXT1 pin 12, optional</strong><span>EXT1 numbers from the rightmost <code>1/2</code> pair toward the left. Pin 12 is the lower contact of the second pair from the left.</span></figcaption></figure>
+        </div>
+        <div class="orientation-warning"><strong>Do not count from the left.</strong><span>On EXT1 and EXT2, pin 1/2 is the rightmost pair in these component-side photos. Power off before moving any connection.</span></div>
+      </section>
+    </section>
+
+    <section class="voltage-section">
+      <div class="voltage-answer"><span class="eyebrow">5 V versus 3.3 V</span><h2>No divider is needed here</h2><p>The AVR-MT128 runs its ATmega128 and ADC from 5 V. The KY-024 is also powered from that same 5 V rail, so its A0 signal remains within the ADC's 0–5 V measurement range. Adding a divider would unnecessarily throw away one third of the ADC range.</p><div class="equation">ADC count ≈ A0 voltage ÷ 5 V × 1023</div></div>
+      <div class="divider-case"><span class="eyebrow">Only for a 3.3 V ADC</span><h2>Optional divider example</h2><p>If this sensor were powered from 5 V but connected to a different controller whose ADC maximum is 3.3 V, use:</p><div class="divider-diagram"><span>KY A0</span><b>— 10 kΩ —●—</b><span>3.3 V ADC</span><small>● — 20 kΩ — GND</small></div><div class="equation">5 V × 20 kΩ ÷ (10 kΩ + 20 kΩ) = 3.33 V</div><p class="warning"><strong>Do not install this divider on the MT128 project.</strong> The MT128 ADC is already a 5 V ADC.</p></div>
+    </section>
+
+    <section class="project-section">
+      <div class="section-heading"><div><span class="eyebrow">Parts</span><h2>Bill of materials</h2></div></div>
+      <div class="parts-grid"><article><b>1</b><span>Olimex AVR-MT128</span></article><article><b>1</b><span>KY-024 Hall sensor module</span></article><article><b>1</b><span>Small permanent magnet</span></article><article><b>1</b><span>1 kΩ resistor</span></article><article><b>1</b><span>100 nF capacitor, optional</span></article><article><b>4</b><span>Female jumper wires</span></article></div>
+    </section>
+
+    <section class="project-section steps-section">
+      <div class="section-heading"><div><span class="eyebrow">Safe bring-up</span><h2>Step-by-step</h2></div></div>
+      <ol class="build-steps"><li><strong>Remove all power.</strong><p>Disconnect the AVR-MT128 barrel supply and programmer before moving wires.</p></li><li><strong>Confirm the KY-024 labels.</strong><p>With the Hall element at the top and header at the bottom, this documented module reads A0, G, +, D0 left-to-right. Clone layouts may differ; follow the silkscreen on your module.</p></li><li><strong>Join ground first.</strong><p>Connect KY G to AVR-MT128 EXT2 pin 1 GND.</p></li><li><strong>Connect the analog signal.</strong><p>Place 1 kΩ in series between KY A0 and ADC header pin 3 (ADC0/PF0). Optionally place 100 nF from ADC0 to ground near the MT128.</p></li><li><strong>Connect 5 V.</strong><p>Connect KY + to AVR-MT128 EXT2 pin 2. Do not insert the 10 kΩ/20 kΩ divider described for 3.3 V controllers.</p></li><li><strong>Optionally connect D0.</strong><p>Connect KY D0 to EXT1 pin 12 (PD5) only if threshold events are useful. The supplied piano firmware uses A0 and does not need D0.</p></li><li><strong>Inspect before power.</strong><p>Check that + is not connected to G, A0, or D0. Confirm the module orientation one more time.</p></li><li><strong>Program safely.</strong><p>For the ISP500-TINY: power the programmer first, then power the MT128, verify the signature, compile, and flash.</p></li><li><strong>Calibrate with no magnet nearby.</strong><p>On startup the firmware averages 64 ADC samples. Keep the magnet away until the LCD leaves “Calibrating...”.</p></li><li><strong>Test and tune.</strong><p>Move the magnet slowly. If notes change too easily or not enough, adjust <code>dead_zone</code> and <code>step</code> in the firmware. The blue KY potentiometer affects D0 only, not A0.</p></li></ol>
+    </section>
+
+    <section class="project-section" id="firmware">
+      <div class="section-heading"><div><span class="eyebrow">Firmware</span><h2>Build and program</h2></div><p>The source is part of the editable project tree.</p></div>
+      <div class="firmware-layout"><div><h3>ADC display test</h3><p>Start with <code>hall_adc_display.c</code>. At boot and continuously afterward, the first LCD row reads <strong>AD Value:&lt;0–1023&gt;</strong>. Move the magnet and confirm the value changes before loading the piano behavior.</p><pre><code>.\OlimexProgrammer.ps1 compile `
+  -Source .\projects\piano-hall-sensor\hall_adc_display.c `
+  -OutputDirectory .\build\piano-hall-sensor</code></pre><h3>Full piano behavior</h3><ul><li>Uses AVCC/5 V as the ADC reference</li><li>Averages 64 startup samples for the no-field baseline</li><li>Uses absolute displacement from baseline</li><li>Maps magnitude into C4 through C5</li><li>Displays the note and raw ADC value</li><li>Drives the onboard differential buzzer</li></ul></div><pre><code>.\OlimexProgrammer.ps1 signature
+.\OlimexProgrammer.ps1 compile `
+  -Source .\projects\piano-hall-sensor\piano_hall_sensor.c `
+  -OutputDirectory .\build\piano-hall-sensor
+
+.\OlimexProgrammer.ps1 flash `
+  -HexFile .\build\piano-hall-sensor\piano_hall_sensor.hex</code></pre></div>
+    </section>
+
+    <section class="project-caution"><strong>Before flashing</strong><p>The existing MT128 program is backed up at <code>build/atmega128/atmega128-flash-backup.hex</code>. Flashing this project erases the existing flash but does not intentionally change fuses.</p></section>
+  </main>
+</body>
+</html>

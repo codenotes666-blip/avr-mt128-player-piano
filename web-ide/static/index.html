@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AVR Workbench</title>
+  <link rel="stylesheet" href="/vendor/codemirror.min.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="AVR Workbench">
+      <span class="brand-mark"><i data-lucide="cpu"></i></span>
+      <span><strong>AVR</strong> Workbench</span>
+    </a>
+    <nav class="view-tabs" aria-label="Workspace views">
+      <button class="view-tab active" data-view="code"><i data-lucide="code-2"></i><span>Code</span></button>
+      <button class="view-tab" data-view="projects"><i data-lucide="blocks"></i><span>Projects</span></button>
+      <button class="view-tab" data-view="hardware"><i data-lucide="circuit-board"></i><span>Hardware</span></button>
+      <button class="view-tab" data-view="api"><i data-lucide="braces"></i><span>API</span></button>
+    </nav>
+    <div class="connection-state" id="connectionState">
+      <span class="pulse"></span><span>Connecting</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="codeView">
+      <div class="workbench">
+        <aside class="project-pane pane">
+          <div class="pane-heading">
+            <span>Project</span>
+            <button class="icon-button" id="refreshFiles" title="Refresh files"><i data-lucide="refresh-cw"></i></button>
+          </div>
+          <div class="target-switch" aria-label="Programming target">
+            <button class="active" data-target="arduino">RedBoard</button>
+            <button data-target="olimex">MT128</button>
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <div class="project-meta">
+            <span id="fileCount">0 sources</span>
+            <span>C / C++</span>
+          </div>
+        </aside>
+
+        <section class="editor-pane pane">
+          <div class="editor-toolbar">
+            <div class="file-identity">
+              <i data-lucide="file-code-2"></i>
+              <span id="activeFile">No source selected</span>
+              <span class="dirty-dot" id="dirtyDot" title="Unsaved changes"></span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="icon-button" id="reloadSource" title="Reload source from disk"><i data-lucide="rotate-ccw"></i></button>
+              <button class="icon-button" id="saveButton" title="Save source"><i data-lucide="save"></i></button>
+              <span class="toolbar-rule"></span>
+              <button class="command-button secondary" id="compileButton"><i data-lucide="hammer"></i>Compile</button>
+              <button class="command-button primary" id="programButton"><i data-lucide="upload"></i><span id="programLabel">Upload</span></button>
+            </div>
+          </div>
+          <div class="editor-search" id="editorSearch" aria-label="Find and replace">
+            <div class="search-input-wrap"><i data-lucide="search"></i><input id="findInput" type="text" autocomplete="off" placeholder="Find in file"><span id="matchCount">No matches</span></div>
+            <button class="icon-button" id="findPrevious" title="Previous match (Shift+Enter)"><i data-lucide="chevron-up"></i></button>
+            <button class="icon-button" id="findNext" title="Next match (Enter)"><i data-lucide="chevron-down"></i></button>
+            <button class="search-option" id="matchCase" title="Match case">Aa</button>
+            <button class="search-option" id="wholeWord" title="Whole word">W</button>
+            <button class="search-option" id="toggleReplace" title="Show replace"><i data-lucide="replace"></i></button>
+            <button class="icon-button" id="closeSearch" title="Close search (Escape)"><i data-lucide="x"></i></button>
+            <div class="replace-controls" id="replaceControls">
+              <div class="search-input-wrap"><i data-lucide="replace-all"></i><input id="replaceInput" type="text" autocomplete="off" placeholder="Replace with"></div>
+              <button class="search-text-button" id="replaceOne">Replace</button>
+              <button class="search-text-button" id="replaceAll">Replace all</button>
+            </div>
+          </div>
+          <div id="editor"></div>
+          <div class="editor-status">
+            <span id="cursorPosition">Ln 1, Col 1</span>
+            <span id="languageMode">C++</span>
+            <span>UTF-8</span>
+          </div>
+        </section>
+
+        <aside class="device-pane pane">
+          <div class="pane-heading">
+            <span>Devices</span>
+            <button class="icon-button" id="refreshDevices" title="Refresh devices"><i data-lucide="scan-line"></i></button>
+          </div>
+          <div id="deviceList" class="device-list"></div>
+
+          <div class="section-label">Target</div>
+          <div class="target-summary">
+            <div class="target-symbol"><i data-lucide="microchip"></i></div>
+            <div>
+              <strong id="targetName">SparkFun RedBoard</strong>
+              <span id="targetMcu">ATmega328P · 5 V · 16 MHz · Uno-compatible</span>
+            </div>
+          </div>
+
+          <label class="field-label" for="portSelect">Port</label>
+          <select id="portSelect"></select>
+
+          <div class="quick-actions" id="quickActions">
+            <button data-action="arduino.detect"><i data-lucide="radar"></i>Detect</button>
+            <button data-action="arduino.monitor"><i data-lucide="activity"></i>Monitor</button>
+          </div>
+
+          <div class="power-order hidden" id="powerOrder">
+            <i data-lucide="power"></i>
+            <div><strong>Power order</strong><span>Programmer first, target second</span></div>
+          </div>
+        </aside>
+
+        <section class="console-pane pane">
+          <div class="console-header">
+            <div><i data-lucide="terminal-square"></i><span>Output</span><span class="job-state idle" id="jobState">Idle</span></div>
+            <div class="console-actions">
+              <select id="jobHistory" title="Job history"></select>
+              <button class="icon-button" id="stopJob" title="Stop active job" disabled><i data-lucide="square"></i></button>
+              <button class="icon-button" id="clearConsole" title="Clear output"><i data-lucide="eraser"></i></button>
+            </div>
+          </div>
+          <pre id="consoleOutput">AVR Workbench ready.</pre>
+        </section>
+      </div>
+    </section>
+
+    <section class="view projects-view" id="projectsView">
+      <div class="reference-header">
+        <div><span class="eyebrow">Useful hardware combinations</span><h1>Projects</h1></div>
+        <p>Complete builds that connect hardware profiles into a tested circuit, firmware, and bring-up procedure.</p>
+      </div>
+      <div class="project-catalog">
+        <article class="project-entry">
+          <div class="project-visual"><img src="/images/avr-mt128-rear.jpg" alt="Olimex AVR-MT128"><span>+</span><img src="/images/ky-024.png" alt="KY-024 Hall sensor"></div>
+          <div class="project-entry-copy"><span class="hardware-index">PROJECT 01</span><h2>Player Piano Controller</h2><p>Coordinate a Raspberry Pi 5, AVR-MT128 relay, and digital Hall endpoint to start the piano, release its coin circuit, and report song completion.</p><div class="project-tags"><span>Pi 5</span><span>Relay</span><span>Hall D0</span><span>Handshake</span></div><a href="/projects/player-piano-controller.html">Open build guide →</a></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view reference-view" id="hardwareView">
+      <div class="reference-header">
+        <div><span class="eyebrow">Connected bench</span><h1>Hardware reference</h1></div>
+        <p>Official pinouts, electrical references, and schematics cached with this workspace.</p>
+      </div>
+      <div class="hardware-grid">
+        <article class="hardware-item uno-item">
+          <div class="hardware-title"><span class="hardware-index">01</span><div><h2>SparkFun RedBoard</h2><p>Classic FTDI generation · ATmega328P · 5 V · 16 MHz</p></div></div>
+          <img class="board-image" src="/images/sparkfun-redboard.jpg" alt="SparkFun RedBoard">
+          <div class="programmer-note"><i data-lucide="badge-check"></i><span>Detected through its FTDI 0403:6015 bridge. SparkFun specifies the Arduino Uno board selection.</span></div>
+          <div class="pin-bands">
+            <div><span>Digital</span><strong>D0–D13</strong><small>PWM: 3, 5, 6, 9, 10, 11</small></div>
+            <div><span>Analog</span><strong>A0–A5</strong><small>I²C: A4 SDA, A5 SCL</small></div>
+            <div><span>Serial</span><strong>D0 RX / D1 TX</strong><small>SPI: 10–13 and ICSP</small></div>
+          </div>
+          <div class="document-links">
+            <a href="/docs-html/arduino-uno-r3-pinout/page-001.html"><i data-lucide="map"></i>Uno-compatible pinout</a>
+            <a href="/docs-html/sparkfun-redboard-v22-schematic/page-001.html"><i data-lucide="network"></i>RedBoard V22 schematic</a>
+            <a href="https://learn.sparkfun.com/tutorials/redboard-hookup-guide/all" target="_blank"><i data-lucide="book-open"></i>SparkFun guide</a>
+          </div>
+        </article>
+
+        <article class="hardware-item mt-item">
+          <div class="hardware-title"><span class="hardware-index">02</span><div><h2>Olimex AVR-MT128</h2><p>ATmega128-16AI · 128 KB flash · 4 KB SRAM · 16 MHz</p></div></div>
+          <img class="board-image" src="/images/avr-mt128.jpg" alt="Olimex AVR-MT128 development board">
+          <div class="connector-table">
+            <div class="table-title"><span>10-pin ICSP</span><small>Top view</small></div>
+            <div class="pin-row"><b>1</b><span>PDI / MOSI</span><b>2</b><span>+5 V sense</span></div>
+            <div class="pin-row"><b>3</b><span>NC</span><b>4</b><span>GND</span></div>
+            <div class="pin-row"><b>5</b><span>RESET</span><b>6</b><span>GND</span></div>
+            <div class="pin-row"><b>7</b><span>SCK</span><b>8</b><span>GND</span></div>
+            <div class="pin-row"><b>9</b><span>PDO / MISO</span><b>10</b><span>GND</span></div>
+          </div>
+          <div class="document-links">
+            <a href="/pinouts/avr-mt128.html"><i data-lucide="panel-top"></i>Pinout</a>
+            <a href="/descriptions/avr-mt128.html"><i data-lucide="list-tree"></i>Description</a>
+            <a href="/docs-html/olimex-avr-mt128-manual/page-001.html"><i data-lucide="book-open"></i>Manual · 15 pages</a>
+            <a href="/docs-html/olimex-avr-mt128-schematic/page-001.html"><i data-lucide="network"></i>Schematic · 1 page</a>
+          </div>
+        </article>
+
+        <article class="hardware-item programmer-item">
+          <div class="hardware-title"><span class="hardware-index">03</span><div><h2>AVR-ISP500-TINY</h2><p>STK500v2 · USB CDC · VID 15BA:000C</p></div></div>
+          <img class="board-image" src="/images/avr-isp500-tiny.jpg" alt="Olimex AVR-ISP500-TINY programmer">
+          <div class="programmer-note"><i data-lucide="zap-off"></i><span>USB powers the programmer. Target voltage is sensed through ICSP pin 2; target power is not supplied.</span></div>
+          <div class="pinout-pair">
+            <figure><img src="/images/avr-icsp-10.gif" alt="Atmel 10-pin ICSP pinout"><figcaption>10-pin ICSP</figcaption></figure>
+            <figure><img src="/images/avr-icsp-6.gif" alt="Atmel 6-pin ICSP pinout"><figcaption>6-pin ICSP</figcaption></figure>
+          </div>
+          <div class="document-links">
+            <a href="/docs-html/olimex-avr-isp500-tiny-manual/page-001.html"><i data-lucide="book-open"></i>Manual · 19 pages</a>
+          </div>
+        </article>
+
+        <article class="hardware-item ky-item">
+          <div class="hardware-title"><span class="hardware-index">04</span><div><h2>KY-024</h2><p>Linear magnetic Hall sensor · 49E/AH49E · LM393</p></div></div>
+          <img class="board-image" src="/images/ky-024.png" alt="KY-024 linear magnetic Hall sensor module">
+          <div class="programmer-note"><i data-lucide="magnet"></i><span>Measures magnetic field through A0 and provides a potentiometer-adjustable threshold on D0.</span></div>
+          <div class="connector-table">
+            <div class="table-title"><span>4-pin header</span><small>Sensor at top, header at bottom</small></div>
+            <div class="pin-row"><b>1</b><span>A0 · Analog output</span><b>2</b><span>G · Ground</span></div>
+            <div class="pin-row"><b>3</b><span>+ · 3–5 V supply</span><b>4</b><span>D0 · Digital threshold</span></div>
+          </div>
+          <div class="document-links">
+            <a href="/descriptions/ky-024.html"><i data-lucide="list-tree"></i>Description</a>
+            <a href="/descriptions/ky-024.html#pinout"><i data-lucide="panel-top"></i>Pinout</a>
+            <a href="/docs-html/ky-024-manual/page-001.html"><i data-lucide="book-open"></i>Manual · 7 pages</a>
+            <a href="/docs-html/ky-024-datasheet/page-001.html"><i data-lucide="file-text"></i>Datasheet · 1 page</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view api-view" id="apiView">
+      <div class="reference-header">
+        <div><span class="eyebrow">Local agent interface</span><h1>HTTP API</h1></div>
+        <p id="apiBase">http://127.0.0.1:8765/api</p>
+      </div>
+      <div class="api-layout">
+        <div class="endpoint-list">
+          <div class="endpoint"><span class="method get">GET</span><code>/api/capabilities</code><p>Machine-readable actions and safety constraints.</p></div>
+          <div class="endpoint"><span class="method get">GET</span><code>/api/devices</code><p>Present Windows serial devices and hardware IDs.</p></div>
+          <div class="endpoint"><span class="method get">GET</span><code>/api/files</code><p>Editable workspace source files.</p></div>
+          <div class="endpoint"><span class="method put">PUT</span><code>/api/file?path=…</code><p>Save source content inside the workspace.</p></div>
+          <div class="endpoint"><span class="method post">POST</span><code>/api/jobs</code><p>Start a constrained compile, program, backup, or monitor action.</p></div>
+          <div class="endpoint"><span class="method get">GET</span><code>/api/jobs/:id</code><p>Poll status and process output.</p></div>
+        </div>
+        <div class="api-example">
+          <div class="example-heading"><span>Compile request</span><button class="icon-button" id="copyApi" title="Copy request"><i data-lucide="copy"></i></button></div>
+          <pre id="apiExample">POST /api/jobs
+Content-Type: application/json
+
+{
+  "action": "arduino.compile",
+  "path": "Blink/Blink.ino"
+}</pre>
+          <div class="api-guard"><i data-lucide="shield-check"></i><div><strong>Constrained execution</strong><span>No arbitrary shell commands. Flash operations require <code>confirmed: true</code>.</span></div></div>
+          <a class="api-doc-link" href="/API.md" target="_blank"><i data-lucide="file-text"></i>Full API reference</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="confirmDialog">
+    <form method="dialog">
+      <div class="dialog-icon"><i data-lucide="triangle-alert"></i></div>
+      <h2 id="confirmTitle">Program device?</h2>
+      <p id="confirmText">This operation writes device memory.</p>
+      <div class="dialog-actions"><button value="cancel">Cancel</button><button value="confirm" class="danger">Continue</button></div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast"></div>
+
+  <script src="/vendor/codemirror.min.js"></script>
+  <script src="/vendor/clike.min.js"></script>
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -37,7 +37,18 @@ Pi TX is 3.3 V and was accepted directly by the MT128 RX input, so the blue Pi-t
 
 ## Hall switch
 
-The active firmware reads the KY-024 digital output at `PD5`, exposed as AVR-MT128 `EXT1` pin 12. Connect module ground and 5 V to the matching MT128 rails, then connect `D0` to `PD5 / EXT1 pin 12`.
+The active firmware reads the KY-024 digital output at `PD5`, exposed as AVR-MT128 `EXT1` pin 12. Use these exact board connections:
+
+| Hall terminal | AVR-MT128 connection |
+| --- | --- |
+| `G` | `EXT2` pin 1, GND |
+| `+` | `EXT2` pin 2, +5 V |
+| `D0` | `EXT1` pin 12, `PD5 / XCK1` |
+| `A0` | Not connected |
+
+To locate the power contacts, view the MT128 component side with the `EXT2` label and ICSP header on the right. On the EXT2 pair nearest ICSP, the upper contact is pin 1 GND and the lower contact is pin 2 +5 V.
+
+![EXT2 pin 1 GND and pin 2 +5 V](../web-ide/static/images/projects/piano-hall-sensor/ext2-pins-1-2.webp)
 
 The tested module behaved as a digital A3144-style switch. Do not use the older `ADC0/PF0` wiring with the active controller firmware.
 

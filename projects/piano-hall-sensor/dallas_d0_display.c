@@ -10,7 +10,7 @@
  *
  * UART: 115200 8N1, newline-terminated ASCII commands.
  * Commands: BEEP, RELAY_ON, RELAY_OFF, AUTO_RELEASE_ON,
- *           AUTO_RELEASE_OFF, LCD <text>, PLAY, STATUS.
+ *           AUTO_RELEASE_OFF, DEBUG_ON, DEBUG_OFF, LCD <text>, PLAY, STATUS.
  */
 
 #define F_CPU 16000000UL
@@ -29,11 +29,12 @@
 #define LCD_LINE_2 0xC0
 
 #define HALL_D0_PIN PD5
+#define TOP_BUTTON PA0
 #define LEFT_BUTTON PA1
 #define MIDDLE_BUTTON PA2
 #define RIGHT_BUTTON PA3
 #define DOWN_BUTTON PA4
-#define BUTTON_MASK (_BV(LEFT_BUTTON) | _BV(MIDDLE_BUTTON) | _BV(RIGHT_BUTTON) | _BV(DOWN_BUTTON))
+#define BUTTON_MASK (_BV(TOP_BUTTON) | _BV(LEFT_BUTTON) | _BV(MIDDLE_BUTTON) | _BV(RIGHT_BUTTON) | _BV(DOWN_BUTTON))
 #define RELAY_PIN PA6
 #define BUZZER_1 PE4
 #define BUZZER_2 PE5
@@ -43,12 +44,18 @@
 #define AUTO_RELEASE_MAGIC 0xC7
 #define AUTO_RELEASE_ENABLED 0xA5
 #define AUTO_RELEASE_DISABLED 0x5A
+#define DEBUG_MAGIC 0xD3
+#define DEBUG_ENABLED 0x3C
+#define DEBUG_DISABLED 0xC3
 #define MENU_MAIN 0
 #define MENU_AUTO_RELEASE 1
-#define MENU_PAGE_COUNT 2
+#define MENU_DEBUG 2
+#define MENU_PAGE_COUNT 3
 
 static uint8_t EEMEM eeprom_auto_release_magic;
 static uint8_t EEMEM eeprom_auto_release;
+static uint8_t EEMEM eeprom_debug_magic;
+static uint8_t EEMEM eeprom_debug;
 
 static void delay_ms(uint16_t milliseconds) {
     while (milliseconds-- != 0) _delay_ms(1);
@@ -128,13 +135,24 @@ static void display_auto_release(uint8_t auto_release) {
     lcd_text(auto_release != 0 ? "MIDDLE: ON      " : "MIDDLE: OFF     ");
 }
 
+static void display_debug(uint8_t debug_enabled) {
+    lcd_command(LCD_CLEAR);
+    lcd_command(LCD_LINE_1);
+    lcd_text("DEBUG           ");
+    lcd_command(LCD_LINE_2);
+    lcd_text(debug_enabled != 0 ? "MIDDLE: ON      " : "MIDDLE: OFF     ");
+}
+
 static void display_menu_page(
     uint8_t menu_page,
     uint8_t auto_release,
+    uint8_t debug_enabled,
     uint8_t magnet_detected
 ) {
     if (menu_page == MENU_AUTO_RELEASE) {
         display_auto_release(auto_release);
+    } else if (menu_page == MENU_DEBUG) {
+        display_debug(debug_enabled);
     } else {
         display_main_screen(magnet_detected);
     }
@@ -218,11 +236,27 @@ static void save_auto_release(uint8_t enabled) {
     eeprom_update_byte(&eeprom_auto_release_magic, AUTO_RELEASE_MAGIC);
 }
 
+static uint8_t load_debug(void) {
+    if (eeprom_read_byte(&eeprom_debug_magic) != DEBUG_MAGIC) {
+        return 0;
+    }
+    return eeprom_read_byte(&eeprom_debug) == DEBUG_ENABLED;
+}
+
+static void save_debug(uint8_t enabled) {
+    eeprom_update_byte(
+        &eeprom_debug,
+        enabled != 0 ? DEBUG_ENABLED : DEBUG_DISABLED
+    );
+    eeprom_update_byte(&eeprom_debug_magic, DEBUG_MAGIC);
+}
+
 static void process_command(
     const char *command,
     uint8_t magnet_detected,
     uint8_t *playing,
-    uint8_t *auto_release
+    uint8_t *auto_release,
+    uint8_t *debug_enabled
 ) {
     if (strcmp(command, "BEEP") == 0) {
         beep();
@@ -251,6 +285,18 @@ static void process_command(
         save_auto_release(*auto_release);
         uart_line("STATUS AUTO RELEASE OFF");
         uart_line("OK");
+    } else if (strcmp(command, "DEBUG_ON") == 0) {
+        *debug_enabled = 1;
+        save_debug(*debug_enabled);
+        uart_line("STATUS DEBUG ON");
+        uart_line("OK");
+    } else if (strcmp(command, "DEBUG_OFF") == 0) {
+        *debug_enabled = 0;
+        save_debug(*debug_enabled);
+        relay_set(0);
+        *playing = 0;
+        uart_line("STATUS DEBUG OFF");
+        uart_line("OK");
     } else if (strncmp(command, "LCD", 3) == 0 &&
                (command[3] == '\0' || command[3] == ' ')) {
         lcd_screen(command[3] == ' ' ? command + 4 : "");
@@ -270,6 +316,7 @@ static void process_command(
         uart_line(relay_is_on() != 0 ? "STATUS RELAY ON" : "STATUS RELAY OFF");
         uart_line(magnet_detected != 0 ? "STATUS HALL TRIP" : "STATUS HALL CLEAR");
         uart_line(*auto_release != 0 ? "STATUS AUTO RELEASE ON" : "STATUS AUTO RELEASE OFF");
+        uart_line(*debug_enabled != 0 ? "STATUS DEBUG ON" : "STATUS DEBUG OFF");
         uart_line("OK");
     } else {
         uart_line("ERROR UNKNOWN COMMAND");
@@ -281,6 +328,7 @@ int main(void) {
     uint8_t previous_relay_state = 0;
     uint8_t playing = 0;
     uint8_t auto_release = load_auto_release();
+    uint8_t debug_enabled = load_debug();
     uint8_t menu_page = MENU_MAIN;
     uint8_t stable_buttons;
     uint8_t candidate_buttons;
@@ -308,9 +356,13 @@ int main(void) {
         uint8_t buttons = (uint8_t)~PINA & BUTTON_MASK;
         uint8_t release_pressed = buttons & _BV(DOWN_BUTTON);
         if (uart_read_command(command, &command_length) != 0) {
-            process_command(command, magnet_detected, &playing, &auto_release);
+            process_command(
+                command, magnet_detected, &playing, &auto_release, &debug_enabled
+            );
             if (menu_page == MENU_AUTO_RELEASE) {
                 display_auto_release(auto_release);
+            } else if (menu_page == MENU_DEBUG) {
+                display_debug(debug_enabled);
             }
         }
 
@@ -320,7 +372,8 @@ int main(void) {
             --hall_hold_ticks;
         }
 
-        if ((magnet_detected != 0 && auto_release != 0) || release_pressed != 0) {
+        if ((magnet_detected != 0 && (auto_release != 0 || debug_enabled != 0)) ||
+            release_pressed != 0) {
             relay_set(0);
         }
 
@@ -335,10 +388,10 @@ int main(void) {
                 stable_buttons = candidate_buttons;
                 if ((pressed_edges & _BV(LEFT_BUTTON)) != 0) {
                     menu_page = menu_page == MENU_MAIN ? MENU_PAGE_COUNT - 1 : menu_page - 1;
-                    display_menu_page(menu_page, auto_release, hall_state);
+                    display_menu_page(menu_page, auto_release, debug_enabled, hall_state);
                 } else if ((pressed_edges & _BV(RIGHT_BUTTON)) != 0) {
                     menu_page = (uint8_t)((menu_page + 1) % MENU_PAGE_COUNT);
-                    display_menu_page(menu_page, auto_release, hall_state);
+                    display_menu_page(menu_page, auto_release, debug_enabled, hall_state);
                 } else if ((pressed_edges & _BV(MIDDLE_BUTTON)) != 0 &&
                            menu_page == MENU_AUTO_RELEASE) {
                     auto_release = auto_release == 0;
@@ -346,6 +399,20 @@ int main(void) {
                     display_auto_release(auto_release);
                     uart_line(auto_release != 0 ?
                               "STATUS AUTO RELEASE ON" : "STATUS AUTO RELEASE OFF");
+                } else if ((pressed_edges & _BV(MIDDLE_BUTTON)) != 0 &&
+                           menu_page == MENU_DEBUG) {
+                    debug_enabled = debug_enabled == 0;
+                    save_debug(debug_enabled);
+                    if (debug_enabled == 0) {
+                        relay_set(0);
+                        playing = 0;
+                    }
+                    display_debug(debug_enabled);
+                    uart_line(debug_enabled != 0 ?
+                              "STATUS DEBUG ON" : "STATUS DEBUG OFF");
+                } else if ((pressed_edges & _BV(TOP_BUTTON)) != 0 &&
+                           debug_enabled != 0 && hall_state == 0) {
+                    relay_set(1);
                 }
             }
         }

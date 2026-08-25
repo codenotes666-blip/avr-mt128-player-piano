@@ -221,7 +221,7 @@
         <article><span>IDLE</span><strong>Relay open</strong><p>Wait for a <code>PLAY</code> or <code>RELAY_ON</code> UART command while displaying Hall state.</p></article>
         <article><span>PLAYING</span><strong>Relay C-NO closed</strong><p>After <code>PLAY</code>, energize PA6, send <code>STARTED</code>, and monitor Hall D0.</p></article>
         <article><span>COMPLETE</span><strong>Relay open</strong><p>On Hall detection, release PA6 immediately, beep, and send <code>COMPLETE</code> to the Pi.</p></article>
-        <article><span>MENU</span><strong>Board controls</strong><p>Left/right cycle the main and EEPROM setting pages. Middle toggles the displayed Boolean; down remains an emergency relay release.</p></article>
+        <article><span>MENU</span><strong>Board controls</strong><p>Left/right cycle MAIN, AUTO RELEASE, and DEBUG. Middle toggles the displayed Boolean. With DEBUG ON, top latches the relay; bottom or Hall releases it.</p></article>
       </div>
       <div class="protocol-code">
         <div><h3>Pi-side commands</h3><pre><code>pianoctl beep

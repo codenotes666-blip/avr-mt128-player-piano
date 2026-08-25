@@ -83,13 +83,14 @@ Create an isolated Python environment on Windows:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r .\web-ide\requirements.txt
-python .\web-ide\app.py
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r .\web-ide\requirements-lock.txt
+.\.venv\Scripts\python.exe .\web-ide\app.py
 ```
 
 Open `http://127.0.0.1:8765/projects/player-piano-controller.html`. The server binds to localhost and exposes compile/flash operations through a fixed action registry; flash actions require explicit confirmation.
+
+The `.venv` directory is ignored and must be recreated rather than committed or copied. `requirements.txt` pins direct dependencies; `requirements-lock.txt` pins the complete verified environment. See [AGENT-HANDOFF.md](AGENT-HANDOFF.md) for a clean-room agent workflow, exact baseline versions, validation commands, generated paths, and ownership boundaries.
 
 ## Verification checklist
 

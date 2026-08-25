@@ -17,6 +17,7 @@ It also retains the supporting AVR programming tools, diagnostic firmware, hardw
 1. Follow [docs/REPRODUCE.md](docs/REPRODUCE.md) to install the Windows AVR toolchain, build and flash the controller, configure the Pi, and start the web guide.
 2. Wire the boards exactly as shown in [docs/WIRING.md](docs/WIRING.md). The MT128 transmits 5 V logic, so its TX path must use the documented divider before reaching the Pi.
 3. Use [docs/UART-PROTOCOL.md](docs/UART-PROTOCOL.md) for commands, responses, and test order.
+4. Give [docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md) to another agent to recreate `.venv`, the web workbench, and the AVR toolchain without copying local state.
 
 The active firmware is `projects/piano-hall-sensor/dallas_d0_display.c`; the historical filename is retained to preserve the development trail. The Pi client is `projects/piano-hall-sensor/pi/pianoctl.py`.
 

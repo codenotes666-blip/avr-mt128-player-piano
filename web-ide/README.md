@@ -3,11 +3,14 @@
 ## Start
 
 ```powershell
-python -m pip install -r .\web-ide\requirements.txt
-python .\web-ide\app.py
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r .\web-ide\requirements-lock.txt
+.\.venv\Scripts\python.exe .\web-ide\app.py
 ```
 
 Open `http://127.0.0.1:8765`.
+
+The ignored `.venv` is local build state. Recreate it from `requirements-lock.txt`; do not commit or copy it between machines. The shorter `requirements.txt` contains only direct dependencies.
 
 The server binds only to localhost. It wraps the workspace's `ArduinoTool.ps1` and `OlimexProgrammer.ps1` scripts through a fixed action registry. Upload and flash requests require explicit confirmation. Source reads and writes are confined to supported files inside the workspace.
 
